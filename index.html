@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -30,9 +29,9 @@
   /* ==================== WIDGET ==================== */
   #chat-widget {
     position: fixed;
-    width: 90vw;
+    width: 90%;
     max-width: 450px;
-    height: 70vh;
+    height: 50%;
     max-height: 550px;
     background: #fff;
     border-radius: 20px;
@@ -148,34 +147,36 @@ const chatSend = document.getElementById("chat-send");
 
 let dragging = false;
 let offsetX, offsetY;
-let isPointerDown = false;
-let startX, startY;
-let tapThreshold = 10; // px
 
+/* ==================== HELPER ==================== */
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
 /* ==================== DRAG ==================== */
 function startDrag(e) {
+  e.preventDefault();
   dragging = true;
   bubble.style.cursor = "grabbing";
   const rect = bubble.getBoundingClientRect();
-  offsetX = e.clientX - rect.left;
-  offsetY = e.clientY - rect.top;
-  document.addEventListener("pointermove", dragBubble);
+  offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  document.addEventListener(e.touches ? "touchmove" : "mousemove", dragBubble);
+  document.addEventListener(e.touches ? "touchend" : "mouseup", stopDrag);
 }
 
 function dragBubble(e) {
   if (!dragging) return;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
   const bubbleWidth = bubble.offsetWidth;
   const bubbleHeight = bubble.offsetHeight;
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
 
-  let newLeft = e.clientX - offsetX;
-  let newTop = e.clientY - offsetY;
+  let newLeft = clientX - offsetX;
+  let newTop = clientY - offsetY;
 
   newLeft = clamp(newLeft, 0, screenW - bubbleWidth);
   newTop = clamp(newTop, 0, screenH - bubbleHeight);
@@ -184,65 +185,41 @@ function dragBubble(e) {
   bubble.style.top = newTop + "px";
 }
 
-function stopBubble() {
+function stopDrag(e) {
   dragging = false;
   bubble.style.cursor = "grab";
-  document.removeEventListener("pointermove", dragBubble);
+  document.removeEventListener("mousemove", dragBubble);
+  document.removeEventListener("mouseup", stopDrag);
+  document.removeEventListener("touchmove", dragBubble);
+  document.removeEventListener("touchend", stopDrag);
 }
 
+bubble.addEventListener("mousedown", startDrag);
+bubble.addEventListener("touchstart", startDrag, { passive: false });
+
 /* ==================== ABRIR / CERRAR WIDGET ==================== */
-function toggleWidget() {
-  const widgetHeight = widget.offsetHeight;
-  const widgetWidth = widget.offsetWidth;
+bubble.addEventListener("click", (e) => {
+  if (dragging) return;
+
+  const widgetHeight = Math.min(widget.offsetHeight, window.innerHeight * 0.8);
+  const widgetWidth = Math.min(widget.offsetWidth, window.innerWidth * 0.9);
   const bubbleRect = bubble.getBoundingClientRect();
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
 
-  let top, left;
+  // Posición inicial: medio vertical a la izquierda si está fuera de vista
+  let top = bubbleRect.top + bubbleRect.height/2 - widgetHeight/2;
+  let left = bubbleRect.left;
 
-  // Vertical: abrir abajo si hay espacio, sino arriba
-  if (bubbleRect.bottom + widgetHeight + 10 <= screenH) {
-    top = bubbleRect.bottom + 10;
-  } else if (bubbleRect.top - widgetHeight - 10 >= 0) {
-    top = bubbleRect.top - widgetHeight - 10;
-  } else {
-    top = clamp(bubbleRect.bottom + 10, 10, screenH - widgetHeight - 10);
-  }
-
-  // Horizontal
-  left = bubbleRect.left;
-  if (left + widgetWidth > screenW) left = screenW - widgetWidth - 10;
-  if (left < 0) left = 10;
+  // Ajuste para que no se salga de la pantalla
+  top = clamp(top, 10, screenH - widgetHeight - 10);
+  left = clamp(left, 10, screenW - widgetWidth - 10);
 
   widget.style.top = top + "px";
   widget.style.left = left + "px";
+  widget.style.display = "flex";
 
-  if (widget.style.display === "flex") {
-    widget.style.transform = "scale(0)";
-    setTimeout(() => { widget.style.display = "none"; }, 300);
-  } else {
-    widget.style.display = "flex";
-    setTimeout(() => { widget.style.transform = "scale(1)"; }, 10);
-  }
-}
-
-/* ==================== PUNTEROS ==================== */
-bubble.addEventListener("pointerdown", (e) => {
-  isPointerDown = true;
-  startX = e.clientX;
-  startY = e.clientY;
-  startDrag(e);
-});
-
-bubble.addEventListener("pointerup", (e) => {
-  stopBubble();
-  if (!isPointerDown) return;
-  const dx = e.clientX - startX;
-  const dy = e.clientY - startY;
-  if (Math.abs(dx) < tapThreshold && Math.abs(dy) < tapThreshold) {
-    toggleWidget();
-  }
-  isPointerDown = false;
+  widget.style.transform = widget.style.transform === "scale(1)" ? "scale(0)" : "scale(1)";
 });
 
 /* ==================== MENSAJES ==================== */
@@ -285,7 +262,6 @@ async function sendMessage() {
   chatInput.value = "";
 
   const lang = /[a-zA-Z]/.test(msg) ? "en" : "es";
-
   const typingEl = addMessage("Louie", "", true, lang);
 
   try {
@@ -295,6 +271,7 @@ async function sendMessage() {
       body: JSON.stringify({ message: msg }),
     });
     const data = await res.json();
+
     typingEl.remove();
     await typeMessage(data.reply);
   } catch (error) {
