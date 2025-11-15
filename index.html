@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -27,8 +28,8 @@
   /* ==================== WIDGET ==================== */
   #chat-widget {
     position: fixed;
-    width: 450px; /* más ancho */
-    height: 550px; /* más alto */
+    width: 450px;
+    height: 550px;
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 4px 25px rgba(0,0,0,0.25);
@@ -55,7 +56,7 @@
     overflow-y: auto;
     background: #f9f9f9;
     font-family: Arial, sans-serif;
-    font-size: 16px; /* texto más grande */
+    font-size: 16px;
     display: flex;
     flex-direction: column;
   }
@@ -71,7 +72,7 @@
     padding: 12px;
     border: none;
     outline: none;
-    font-size: 16px; /* input más grande */
+    font-size: 16px;
   }
 
   #chat-send {
@@ -90,7 +91,7 @@
     border-radius: 18px;
     max-width: 80%;
     word-wrap: break-word;
-    font-size: 16px; /* mensajes más grandes */
+    font-size: 16px;
   }
 
   .message.user {
@@ -162,7 +163,6 @@ bubble.addEventListener("mousedown", (e) => {
 
 function moveBubble(e) {
   if (!dragging) return;
-
   const bubbleWidth = bubble.offsetWidth;
   const bubbleHeight = bubble.offsetHeight;
   const screenW = window.innerWidth;
@@ -197,7 +197,6 @@ bubble.addEventListener("click", () => {
 
   let top, left;
 
-  // Vertical: abrir abajo si hay espacio, sino arriba
   if (bubbleRect.bottom + widgetHeight + 10 <= screenH) {
     top = bubbleRect.bottom + 10;
   } else if (bubbleRect.top - widgetHeight - 10 >= 0) {
@@ -206,7 +205,6 @@ bubble.addEventListener("click", () => {
     top = clamp(bubbleRect.bottom + 10, 10, screenH - widgetHeight - 10);
   }
 
-  // Horizontal
   left = bubbleRect.left;
   if (left + widgetWidth > screenW) left = screenW - widgetWidth - 10;
   if (left < 0) left = 10;
@@ -215,24 +213,23 @@ bubble.addEventListener("click", () => {
   widget.style.left = left + "px";
   widget.style.display = "flex";
 
-  // Animación scale
   widget.style.transform =
     widget.style.transform === "scale(1)" ? "scale(0)" : "scale(1)";
 });
 
 /* ==================== MENSAJES ==================== */
-function addMessage(role, text, typing = false, lang = "es") {
+function addMessage(role, text, typing = false) {
   const el = document.createElement("div");
   el.classList.add("message", role === "Tú" ? "user" : "louie");
   
   if (typing) {
-    el.textContent = lang === "es" ? "Louie está escribiendo" : "Typing";
+    el.textContent = "Louie está escribiendo";
     const dots = document.createElement("span");
     dots.classList.add("typing-dots");
     dots.textContent = "...";
     el.appendChild(dots);
   } else {
-    el.textContent = `${text}`;
+    el.textContent = text;
   }
 
   chatBody.appendChild(el);
@@ -240,7 +237,7 @@ function addMessage(role, text, typing = false, lang = "es") {
   return el;
 }
 
-/* ==================== ESCRITURA TIPO CHATGPT ==================== */
+/* ==================== ESCRITURA ==================== */
 async function typeMessage(text) {
   const el = document.createElement("div");
   el.classList.add("message", "louie");
@@ -260,28 +257,22 @@ async function sendMessage() {
   addMessage("Tú", msg);
   chatInput.value = "";
 
-  // Detectar idioma básico (si hay letras inglesas mayormente) 
-  const lang = /[a-zA-Z]/.test(msg) ? "en" : "es";
-
-  // Mostrar “Louie escribiendo…” o “Typing…”
-  const typingEl = addMessage("Louie", "", true, lang);
+  const typingEl = addMessage("Louie", "", true);
 
   try {
     const res = await fetch("https://louie-web-qa.onrender.com/message", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ message: msg }),
-});
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg }),
+    });
 
     const data = await res.json();
 
-    // Remover “escribiendo…”
     typingEl.remove();
-
-    // Mostrar respuesta letra por letra
     await typeMessage(data.reply);
 
   } catch (error) {
+    console.error("Error fetch:", error);
     typingEl.remove();
     addMessage("Louie", "Error 😅, no pude procesar tu mensaje.");
   }
@@ -294,5 +285,4 @@ chatInput.addEventListener("keypress", (e) => {
 </script>
 </body>
 </html>
-
 
