@@ -5,58 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Louie AI Demo</title>
 <style>
+  /* ==================== BURBUJA ==================== */
   #chat-bubble {
     position: fixed;
-    left: 20px;
     top: 50%;
+    left: 10px; /* posición inicial en el lado izquierdo */
     transform: translateY(-50%);
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     background: #007bff;
     color: #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 24px;
     cursor: grab;
     z-index: 99999;
     user-select: none;
   }
 
+  /* ==================== WIDGET ==================== */
   #chat-widget {
     position: fixed;
     width: 90%;
-    max-width: 450px;
-    height: 70%;
-    max-height: 550px;
+    max-width: 400px;
+    height: 500px;
     background: #fff;
-    border-radius: 20px;
+    border-radius: 15px;
     box-shadow: 0 4px 25px rgba(0,0,0,0.25);
     display: none;
     flex-direction: column;
     overflow: hidden;
-    z-index: 99998;
+    z-index: 9999;
     transform: scale(0);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, top 0.3s ease, left 0.3s ease;
   }
 
   #chat-header {
     background: #007bff;
     color: #fff;
-    padding: 15px;
+    padding: 12px;
     text-align: center;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
   }
 
   #chat-body {
     flex: 1;
-    padding: 15px;
+    padding: 10px;
     overflow-y: auto;
     background: #f9f9f9;
     font-family: Arial, sans-serif;
-    font-size: 16px;
+    font-size: 14px;
     display: flex;
     flex-direction: column;
   }
@@ -69,14 +70,14 @@
 
   #chat-input {
     flex: 1;
-    padding: 12px;
+    padding: 10px;
     border: none;
     outline: none;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   #chat-send {
-    padding: 12px 20px;
+    padding: 10px 16px;
     background: #007bff;
     border: none;
     color: #fff;
@@ -84,13 +85,14 @@
     font-weight: bold;
   }
 
+  /* Mensajes */
   .message {
     margin: 5px 0;
-    padding: 10px 14px;
-    border-radius: 18px;
+    padding: 8px 12px;
+    border-radius: 15px;
     max-width: 80%;
     word-wrap: break-word;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .message.user {
@@ -105,6 +107,7 @@
     align-self: flex-start;
   }
 
+  /* Animación de los puntitos de escritura */
   @keyframes blink {
     0% { opacity: 0; }
     50% { opacity: 1; }
@@ -117,20 +120,40 @@
     animation: blink 1s infinite;
   }
 
-  @media (max-width: 768px) {
+  /* Tarjetas de propiedades */
+  .property-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 8px;
+    margin: 5px 0;
+    background: #fff;
+  }
+
+  .property-card img {
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 5px;
+  }
+
+  @media (max-width: 600px) {
     #chat-widget {
-      width: 90%;
-      height: 60%;
-      max-height: none;
+      width: 80%;
+      height: 70%;
     }
-    #chat-body { font-size: 14px; }
-    #chat-input { font-size: 14px; }
+    #chat-bubble {
+      width: 45px;
+      height: 45px;
+      font-size: 22px;
+    }
   }
 </style>
 </head>
 <body>
 
+<!-- BURBUJA -->
 <div id="chat-bubble">💬</div>
+
+<!-- WIDGET -->
 <div id="chat-widget">
   <div id="chat-header">Louie AI</div>
   <div id="chat-body"></div>
@@ -148,54 +171,39 @@ const chatInput = document.getElementById("chat-input");
 const chatSend = document.getElementById("chat-send");
 
 let dragging = false;
-let offsetX, offsetY;
-let widgetVisible = false;
+let offsetX = 0, offsetY = 0;
 
 function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
 
-/* DRAG */
-bubble.addEventListener("mousedown", startDrag);
-bubble.addEventListener("touchstart", startDrag);
-
-function startDrag(e) {
+/* ==================== DRAG ==================== */
+bubble.addEventListener("mousedown", (e) => {
   dragging = true;
   bubble.style.cursor = "grabbing";
   const rect = bubble.getBoundingClientRect();
-  if (e.type === "touchstart") {
-    offsetX = e.touches[0].clientX - rect.left;
-    offsetY = e.touches[0].clientY - rect.top;
-    document.addEventListener("touchmove", moveBubble);
-    document.addEventListener("touchend", stopBubble);
-  } else {
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-    document.addEventListener("mousemove", moveBubble);
-    document.addEventListener("mouseup", stopBubble);
-  }
-}
+  offsetX = e.clientX - rect.left;
+  offsetY = e.clientY - rect.top;
+  document.addEventListener("mousemove", moveBubble);
+  document.addEventListener("mouseup", stopBubble);
+});
 
 function moveBubble(e) {
   if (!dragging) return;
-  let clientX, clientY;
-  if (e.type.startsWith("touch")) {
-    clientX = e.touches[0].clientX;
-    clientY = e.touches[0].clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
-  }
   const bubbleWidth = bubble.offsetWidth;
   const bubbleHeight = bubble.offsetHeight;
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
-  let newLeft = clientX - offsetX;
-  let newTop = clientY - offsetY;
+
+  let newLeft = e.clientX - offsetX;
+  let newTop = e.clientY - offsetY;
+
   newLeft = clamp(newLeft, 0, screenW - bubbleWidth);
   newTop = clamp(newTop, 0, screenH - bubbleHeight);
+
   bubble.style.left = newLeft + "px";
   bubble.style.top = newTop + "px";
 
-  if (widgetVisible) positionWidget();
+  // Si está abierto el widget, actualiza la posición al lado
+  if (widget.style.display === "flex") positionWidget();
 }
 
 function stopBubble() {
@@ -203,64 +211,70 @@ function stopBubble() {
   bubble.style.cursor = "grab";
   document.removeEventListener("mousemove", moveBubble);
   document.removeEventListener("mouseup", stopBubble);
-  document.removeEventListener("touchmove", moveBubble);
-  document.removeEventListener("touchend", stopBubble);
 }
 
-/* ABRIR / CERRAR WIDGET */
+/* ==================== ABRIR / CERRAR WIDGET ==================== */
 bubble.addEventListener("click", () => {
   if (dragging) return;
-  if (widgetVisible) {
+  if (widget.style.display === "flex") {
     widget.style.transform = "scale(0)";
-    widgetVisible = false;
-    return;
+    setTimeout(() => widget.style.display = "none", 300);
+  } else {
+    widget.style.display = "flex";
+    positionWidget();
+    setTimeout(() => widget.style.transform = "scale(1)", 10);
   }
-  widget.style.display = "flex";
-  positionWidget();
-  widget.style.transform = "scale(1)";
-  widgetVisible = true;
 });
 
 function positionWidget() {
+  const bubbleRect = bubble.getBoundingClientRect();
   const widgetWidth = widget.offsetWidth;
   const widgetHeight = widget.offsetHeight;
-  const bubbleRect = bubble.getBoundingClientRect();
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
 
-  let left, top;
+  let top = bubbleRect.top;
+  let left = bubbleRect.right + 10; // por defecto al lado derecho
 
-  if (bubbleRect.right + widgetWidth + 10 <= screenW) {
-    left = bubbleRect.right + 10;
-  } else if (bubbleRect.left - widgetWidth - 10 >= 0) {
-    left = bubbleRect.left - widgetWidth - 10;
-  } else {
-    left = clamp(screenW/2 - widgetWidth/2, 10, screenW - widgetWidth - 10);
-  }
+  // Si se sale por la derecha, poner a la izquierda
+  if (left + widgetWidth > screenW) left = bubbleRect.left - widgetWidth - 10;
+  // Si se sale por arriba/abajo, ajustar
+  if (top + widgetHeight > screenH) top = screenH - widgetHeight - 10;
+  if (top < 10) top = 10;
 
-  if (bubbleRect.top + widgetHeight <= screenH) {
-    top = bubbleRect.top;
-  } else if (bubbleRect.bottom - widgetHeight >= 0) {
-    top = bubbleRect.bottom - widgetHeight;
-  } else {
-    top = clamp(screenH/2 - widgetHeight/2, 10, screenH - widgetHeight - 10);
-  }
-
-  widget.style.left = left + "px";
   widget.style.top = top + "px";
+  widget.style.left = left + "px";
 }
 
-/* MENSAJES */
-function addMessage(role, text, typing = false, lang = "es") {
+/* ==================== MENSAJES ==================== */
+function addMessage(role, text, typing = false) {
   const el = document.createElement("div");
   el.classList.add("message", role === "Tú" ? "user" : "louie");
+
   if (typing) {
-    el.textContent = lang === "es" ? "Louie está escribiendo" : "Typing";
+    el.textContent = "Louie está escribiendo";
     const dots = document.createElement("span");
     dots.classList.add("typing-dots");
     dots.textContent = "...";
     el.appendChild(dots);
-  } else { el.textContent = text; }
+  } else {
+    if (Array.isArray(text)) {
+      // Si es array de propiedades
+      text.forEach(p => {
+        const card = document.createElement("div");
+        card.classList.add("property-card");
+        card.innerHTML = `
+          <strong>${p.title}</strong><br>
+          ${p.price} - ${p.location || ""}<br>
+          ${p.imgURL ? `<img src="${p.imgURL}">` : ""}
+        `;
+        el.appendChild(card);
+      });
+    } else {
+      el.textContent = text;
+    }
+  }
+
   chatBody.appendChild(el);
   chatBody.scrollTop = chatBody.scrollHeight;
   return el;
@@ -277,13 +291,14 @@ async function typeMessage(text) {
   }
 }
 
+/* ==================== ENVIAR MENSAJE ==================== */
 async function sendMessage() {
   const msg = chatInput.value.trim();
   if (!msg) return;
   addMessage("Tú", msg);
   chatInput.value = "";
-  const lang = /[a-zA-Z]/.test(msg) ? "en" : "es";
-  const typingEl = addMessage("Louie", "", true, lang);
+
+  const typingEl = addMessage("Louie", "", true);
 
   try {
     const res = await fetch("https://louie-web-qa.onrender.com/message", {
@@ -293,16 +308,22 @@ async function sendMessage() {
     });
     const data = await res.json();
     typingEl.remove();
-    await typeMessage(data.reply);
-  } catch (error) {
+
+    if (Array.isArray(data.reply)) {
+      addMessage("Louie", data.reply);
+    } else {
+      await typeMessage(data.reply);
+    }
+  } catch (err) {
     typingEl.remove();
     addMessage("Louie", "Error 😅, no pude procesar tu mensaje.");
   }
 }
 
 chatSend.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", (e) => { if(e.key==="Enter") sendMessage(); });
-
+chatInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
 </script>
 </body>
 </html>
