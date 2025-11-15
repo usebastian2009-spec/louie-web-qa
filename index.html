@@ -267,11 +267,12 @@ async function sendMessage() {
   const typingEl = addMessage("Louie", "", true, lang);
 
   try {
-    const res = await fetch("http://localhost:3000/message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msg }),
-    });
+    const res = await fetch("https://louie-web-qa.onrender.com/message", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ message: msg }),
+});
+
     const data = await res.json();
 
     // Remover “escribiendo…”
@@ -293,4 +294,5 @@ chatInput.addEventListener("keypress", (e) => {
 </script>
 </body>
 </html>
+
 
