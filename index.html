@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Louie AI Demo</title>
 <style>
-  /* ==================== BURBUJA ==================== */
   #chat-bubble {
     position: fixed;
     left: 20px;
@@ -27,7 +24,6 @@
     user-select: none;
   }
 
-  /* ==================== WIDGET ==================== */
   #chat-widget {
     position: fixed;
     width: 90%;
@@ -88,7 +84,6 @@
     font-weight: bold;
   }
 
-  /* Mensajes */
   .message {
     margin: 5px 0;
     padding: 10px 14px;
@@ -110,7 +105,6 @@
     align-self: flex-start;
   }
 
-  /* Animación de los puntitos de escritura */
   @keyframes blink {
     0% { opacity: 0; }
     50% { opacity: 1; }
@@ -123,28 +117,20 @@
     animation: blink 1s infinite;
   }
 
-  /* Ajuste móvil */
   @media (max-width: 768px) {
     #chat-widget {
       width: 90%;
       height: 60%;
       max-height: none;
     }
-    #chat-body {
-      font-size: 14px;
-    }
-    #chat-input {
-      font-size: 14px;
-    }
+    #chat-body { font-size: 14px; }
+    #chat-input { font-size: 14px; }
   }
 </style>
 </head>
 <body>
 
-<!-- BURBUJA -->
 <div id="chat-bubble">💬</div>
-
-<!-- WIDGET -->
 <div id="chat-widget">
   <div id="chat-header">Louie AI</div>
   <div id="chat-body"></div>
@@ -163,12 +149,11 @@ const chatSend = document.getElementById("chat-send");
 
 let dragging = false;
 let offsetX, offsetY;
+let widgetVisible = false;
 
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
+function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
 
-/* ==================== DRAG ==================== */
+/* DRAG */
 bubble.addEventListener("mousedown", startDrag);
 bubble.addEventListener("touchstart", startDrag);
 
@@ -199,20 +184,18 @@ function moveBubble(e) {
     clientX = e.clientX;
     clientY = e.clientY;
   }
-
   const bubbleWidth = bubble.offsetWidth;
   const bubbleHeight = bubble.offsetHeight;
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
-
   let newLeft = clientX - offsetX;
   let newTop = clientY - offsetY;
-
   newLeft = clamp(newLeft, 0, screenW - bubbleWidth);
   newTop = clamp(newTop, 0, screenH - bubbleHeight);
-
   bubble.style.left = newLeft + "px";
   bubble.style.top = newTop + "px";
+
+  if (widgetVisible) positionWidget();
 }
 
 function stopBubble() {
@@ -224,61 +207,60 @@ function stopBubble() {
   document.removeEventListener("touchend", stopBubble);
 }
 
-/* ==================== ABRIR / CERRAR WIDGET ==================== */
+/* ABRIR / CERRAR WIDGET */
 bubble.addEventListener("click", () => {
   if (dragging) return;
+  if (widgetVisible) {
+    widget.style.transform = "scale(0)";
+    widgetVisible = false;
+    return;
+  }
+  widget.style.display = "flex";
+  positionWidget();
+  widget.style.transform = "scale(1)";
+  widgetVisible = true;
+});
 
+function positionWidget() {
   const widgetWidth = widget.offsetWidth;
   const widgetHeight = widget.offsetHeight;
   const bubbleRect = bubble.getBoundingClientRect();
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
 
-  let top, left;
+  let left, top;
 
-  // Abrir a la derecha si hay espacio
   if (bubbleRect.right + widgetWidth + 10 <= screenW) {
     left = bubbleRect.right + 10;
   } else if (bubbleRect.left - widgetWidth - 10 >= 0) {
     left = bubbleRect.left - widgetWidth - 10;
   } else {
-    left = clamp(screenW / 2 - widgetWidth / 2, 10, screenW - widgetWidth - 10);
+    left = clamp(screenW/2 - widgetWidth/2, 10, screenW - widgetWidth - 10);
   }
 
-  // Ajuste vertical
   if (bubbleRect.top + widgetHeight <= screenH) {
     top = bubbleRect.top;
   } else if (bubbleRect.bottom - widgetHeight >= 0) {
     top = bubbleRect.bottom - widgetHeight;
   } else {
-    top = clamp(screenH / 2 - widgetHeight / 2, 10, screenH - widgetHeight - 10);
+    top = clamp(screenH/2 - widgetHeight/2, 10, screenH - widgetHeight - 10);
   }
 
-  widget.style.top = `${top}px`;
-  widget.style.left = `${left}px`;
-  widget.style.display = "flex";
-  widget.style.transform = "scale(1)";
+  widget.style.left = left + "px";
+  widget.style.top = top + "px";
+}
 
-  // Burbuja siempre encima
-  bubble.style.zIndex = 99999;
-  widget.style.zIndex = 99998;
-});
-
-/* ==================== MENSAJES ==================== */
+/* MENSAJES */
 function addMessage(role, text, typing = false, lang = "es") {
   const el = document.createElement("div");
   el.classList.add("message", role === "Tú" ? "user" : "louie");
-  
   if (typing) {
     el.textContent = lang === "es" ? "Louie está escribiendo" : "Typing";
     const dots = document.createElement("span");
     dots.classList.add("typing-dots");
     dots.textContent = "...";
     el.appendChild(dots);
-  } else {
-    el.textContent = `${text}`;
-  }
-
+  } else { el.textContent = text; }
   chatBody.appendChild(el);
   chatBody.scrollTop = chatBody.scrollHeight;
   return el;
@@ -288,7 +270,6 @@ async function typeMessage(text) {
   const el = document.createElement("div");
   el.classList.add("message", "louie");
   chatBody.appendChild(el);
-
   for (let i = 0; i < text.length; i++) {
     el.textContent += text[i];
     chatBody.scrollTop = chatBody.scrollHeight;
@@ -299,10 +280,8 @@ async function typeMessage(text) {
 async function sendMessage() {
   const msg = chatInput.value.trim();
   if (!msg) return;
-
   addMessage("Tú", msg);
   chatInput.value = "";
-
   const lang = /[a-zA-Z]/.test(msg) ? "en" : "es";
   const typingEl = addMessage("Louie", "", true, lang);
 
@@ -313,7 +292,6 @@ async function sendMessage() {
       body: JSON.stringify({ message: msg }),
     });
     const data = await res.json();
-
     typingEl.remove();
     await typeMessage(data.reply);
   } catch (error) {
@@ -323,9 +301,8 @@ async function sendMessage() {
 }
 
 chatSend.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
+chatInput.addEventListener("keypress", (e) => { if(e.key==="Enter") sendMessage(); });
+
 </script>
 </body>
 </html>
