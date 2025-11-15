@@ -5,7 +5,6 @@ const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const cors = require("cors");
 const path = require("path");
-const fetch = require("node-fetch");
 const cheerio = require("cheerio"); // para parsear HTML
 
 dotenv.config();
@@ -104,4 +103,5 @@ Devuelve un array de objetos JSON con title, price, location, imgURL. Si no hay 
 
 /* ==================== INICIAR SERVIDOR ==================== */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
