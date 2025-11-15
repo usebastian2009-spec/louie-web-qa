@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,8 +10,8 @@
   /* ==================== BURBUJA ==================== */
   #chat-bubble {
     position: fixed;
-    top: 50%;
     left: 20px;
+    top: 50%;
     transform: translateY(-50%);
     width: 60px;
     height: 60px;
@@ -86,6 +88,7 @@
     font-weight: bold;
   }
 
+  /* Mensajes */
   .message {
     margin: 5px 0;
     padding: 10px 14px;
@@ -107,6 +110,7 @@
     align-self: flex-start;
   }
 
+  /* Animación de los puntitos de escritura */
   @keyframes blink {
     0% { opacity: 0; }
     50% { opacity: 1; }
@@ -119,10 +123,18 @@
     animation: blink 1s infinite;
   }
 
-  @media (max-width: 600px) {
+  /* Ajuste móvil */
+  @media (max-width: 768px) {
     #chat-widget {
-      width: 80%;
+      width: 90%;
       height: 60%;
+      max-height: none;
+    }
+    #chat-body {
+      font-size: 14px;
+    }
+    #chat-input {
+      font-size: 14px;
     }
   }
 </style>
@@ -157,27 +169,44 @@ function clamp(value, min, max) {
 }
 
 /* ==================== DRAG ==================== */
-bubble.addEventListener("mousedown", (e) => {
+bubble.addEventListener("mousedown", startDrag);
+bubble.addEventListener("touchstart", startDrag);
+
+function startDrag(e) {
   dragging = true;
   bubble.style.cursor = "grabbing";
   const rect = bubble.getBoundingClientRect();
-  offsetX = e.clientX - rect.left;
-  offsetY = e.clientY - rect.top;
-
-  document.addEventListener("mousemove", moveBubble);
-  document.addEventListener("mouseup", stopBubble);
-});
+  if (e.type === "touchstart") {
+    offsetX = e.touches[0].clientX - rect.left;
+    offsetY = e.touches[0].clientY - rect.top;
+    document.addEventListener("touchmove", moveBubble);
+    document.addEventListener("touchend", stopBubble);
+  } else {
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    document.addEventListener("mousemove", moveBubble);
+    document.addEventListener("mouseup", stopBubble);
+  }
+}
 
 function moveBubble(e) {
   if (!dragging) return;
+  let clientX, clientY;
+  if (e.type.startsWith("touch")) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  } else {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  }
 
   const bubbleWidth = bubble.offsetWidth;
   const bubbleHeight = bubble.offsetHeight;
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
 
-  let newLeft = e.clientX - offsetX;
-  let newTop = e.clientY - offsetY;
+  let newLeft = clientX - offsetX;
+  let newTop = clientY - offsetY;
 
   newLeft = clamp(newLeft, 0, screenW - bubbleWidth);
   newTop = clamp(newTop, 0, screenH - bubbleHeight);
@@ -191,6 +220,8 @@ function stopBubble() {
   bubble.style.cursor = "grab";
   document.removeEventListener("mousemove", moveBubble);
   document.removeEventListener("mouseup", stopBubble);
+  document.removeEventListener("touchmove", moveBubble);
+  document.removeEventListener("touchend", stopBubble);
 }
 
 /* ==================== ABRIR / CERRAR WIDGET ==================== */
@@ -205,16 +236,7 @@ bubble.addEventListener("click", () => {
 
   let top, left;
 
-  // Vertical
-  if (bubbleRect.bottom + widgetHeight + 10 <= screenH) {
-    top = bubbleRect.bottom + 10;
-  } else if (bubbleRect.top - widgetHeight - 10 >= 0) {
-    top = bubbleRect.top - widgetHeight - 10;
-  } else {
-    top = clamp(screenH / 2 - widgetHeight / 2, 10, screenH - widgetHeight - 10);
-  }
-
-  // Horizontal
+  // Abrir a la derecha si hay espacio
   if (bubbleRect.right + widgetWidth + 10 <= screenW) {
     left = bubbleRect.right + 10;
   } else if (bubbleRect.left - widgetWidth - 10 >= 0) {
@@ -223,11 +245,19 @@ bubble.addEventListener("click", () => {
     left = clamp(screenW / 2 - widgetWidth / 2, 10, screenW - widgetWidth - 10);
   }
 
+  // Ajuste vertical
+  if (bubbleRect.top + widgetHeight <= screenH) {
+    top = bubbleRect.top;
+  } else if (bubbleRect.bottom - widgetHeight >= 0) {
+    top = bubbleRect.bottom - widgetHeight;
+  } else {
+    top = clamp(screenH / 2 - widgetHeight / 2, 10, screenH - widgetHeight - 10);
+  }
+
   widget.style.top = `${top}px`;
   widget.style.left = `${left}px`;
   widget.style.display = "flex";
-
-  widget.style.transform = widget.style.transform === "scale(1)" ? "scale(0)" : "scale(1)";
+  widget.style.transform = "scale(1)";
 
   // Burbuja siempre encima
   bubble.style.zIndex = 99999;
@@ -299,4 +329,3 @@ chatInput.addEventListener("keypress", (e) => {
 </script>
 </body>
 </html>
-
