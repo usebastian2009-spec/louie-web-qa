@@ -1,20 +1,19 @@
 {
   "name": "louie-web-qa",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "Backend del chatbot Louie Web QA",
+  "main": "server.js",
   "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Rey Forever",
+  "license": "ISC",
   "dependencies": {
+    "express": "^4.21.2",
+    "openai": "^4.104.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "node-fetch": "^3.3.2",
-    "openai": "^6.9.0"
+    "dotenv": "^16.6.1",
+    "node-fetch": "^3.4.0"
   }
 }

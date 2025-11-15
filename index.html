@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5,11 +7,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Louie AI Demo</title>
 <style>
-  /* ==================== BURBUJA ==================== */
+  /* BURBUJA */
   #chat-bubble {
     position: fixed;
     top: 50%;
-    left: 10px; /* posición inicial en el lado izquierdo */
+    left: 10px;
     transform: translateY(-50%);
     width: 50px;
     height: 50px;
@@ -23,143 +25,121 @@
     cursor: grab;
     z-index: 99999;
     user-select: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   }
 
-  /* ==================== WIDGET ==================== */
+  /* WIDGET */
   #chat-widget {
     position: fixed;
-    width: 90%;
-    max-width: 400px;
-    height: 500px;
+    width: 75%;
+    height: 75%;
     background: #fff;
-    border-radius: 15px;
-    box-shadow: 0 4px 25px rgba(0,0,0,0.25);
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
     display: none;
     flex-direction: column;
     overflow: hidden;
     z-index: 9999;
-    transform: scale(0);
-    transition: transform 0.3s ease, top 0.3s ease, left 0.3s ease;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) scale(0);
+    transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
   #chat-header {
     background: #007bff;
     color: #fff;
-    padding: 12px;
+    padding: 16px;
     text-align: center;
     font-size: 18px;
     font-weight: bold;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
   }
 
   #chat-body {
     flex: 1;
-    padding: 10px;
+    padding: 12px;
     overflow-y: auto;
     background: #f9f9f9;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
     display: flex;
     flex-direction: column;
+    gap: 8px;
   }
 
   #chat-input-area {
     display: flex;
+    padding: 10px;
     border-top: 1px solid #ddd;
     background: #fff;
+    align-items: center;
   }
 
   #chat-input {
     flex: 1;
-    padding: 10px;
-    border: none;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
     outline: none;
     font-size: 14px;
+    margin-right: 8px;
   }
 
   #chat-send {
-    padding: 10px 16px;
     background: #007bff;
     border: none;
     color: #fff;
+    padding: 10px 16px;
+    border-radius: 50%;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
+    transition: background 0.2s;
   }
+  #chat-send:hover { background: #0056b3; }
 
-  /* Mensajes */
   .message {
-    margin: 5px 0;
-    padding: 8px 12px;
+    padding: 12px 16px;
     border-radius: 15px;
-    max-width: 80%;
+    max-width: 75%;
     word-wrap: break-word;
     font-size: 14px;
+    line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
+  .message.user { background: #007bff; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .message.louie { background: #e5e5ea; color: #000; align-self: flex-start; border-bottom-left-radius: 4px; }
 
-  .message.user {
-    background: #007bff;
-    color: #fff;
-    align-self: flex-end;
-  }
+  @keyframes blink {0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+  .typing-dots { display:inline-block; margin-left:5px; animation:blink 1s infinite; }
 
-  .message.louie {
-    background: #e0e0e0;
-    color: #000;
-    align-self: flex-start;
-  }
-
-  /* Animación de los puntitos de escritura */
-  @keyframes blink {
-    0% { opacity: 0; }
-    50% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  .typing-dots {
-    display: inline-block;
-    margin-left: 5px;
-    animation: blink 1s infinite;
-  }
-
-  /* Tarjetas de propiedades */
   .property-card {
     border: 1px solid #ddd;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 8px;
-    margin: 5px 0;
     background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
+  .property-card img { width: 100%; max-height:180px; object-fit:cover; border-radius:8px; margin-top:5px; }
+  .property-card.highlight { border:2px solid #007bff; }
 
-  .property-card img {
-    width: 100%;
-    border-radius: 8px;
-    margin-top: 5px;
-  }
-
-  @media (max-width: 600px) {
-    #chat-widget {
-      width: 80%;
-      height: 70%;
-    }
-    #chat-bubble {
-      width: 45px;
-      height: 45px;
-      font-size: 22px;
-    }
+  @media(max-width:600px){
+    #chat-widget{width:90%;height:75%;}
+    #chat-bubble{width:45px;height:45px;font-size:22px;}
   }
 </style>
 </head>
 <body>
 
-<!-- BURBUJA -->
 <div id="chat-bubble">💬</div>
-
-<!-- WIDGET -->
 <div id="chat-widget">
   <div id="chat-header">Louie AI</div>
   <div id="chat-body"></div>
   <div id="chat-input-area">
     <input id="chat-input" type="text" placeholder="Escribe un mensaje..." />
-    <button id="chat-send">Enviar</button>
+    <button id="chat-send">➤</button>
   </div>
 </div>
 
@@ -170,160 +150,105 @@ const chatBody = document.getElementById("chat-body");
 const chatInput = document.getElementById("chat-input");
 const chatSend = document.getElementById("chat-send");
 
-let dragging = false;
-let offsetX = 0, offsetY = 0;
+let dragging = false, offsetX = 0, offsetY = 0;
+let chatOpen = false, firstOpen = true;
 
 function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
 
-/* ==================== DRAG ==================== */
+/* DRAG */
 bubble.addEventListener("mousedown", (e) => {
-  dragging = true;
-  bubble.style.cursor = "grabbing";
+  dragging = true; bubble.style.cursor = "grabbing";
   const rect = bubble.getBoundingClientRect();
-  offsetX = e.clientX - rect.left;
-  offsetY = e.clientY - rect.top;
+  offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
   document.addEventListener("mousemove", moveBubble);
   document.addEventListener("mouseup", stopBubble);
 });
-
 function moveBubble(e) {
-  if (!dragging) return;
-  const bubbleWidth = bubble.offsetWidth;
-  const bubbleHeight = bubble.offsetHeight;
-  const screenW = window.innerWidth;
-  const screenH = window.innerHeight;
-
-  let newLeft = e.clientX - offsetX;
-  let newTop = e.clientY - offsetY;
-
-  newLeft = clamp(newLeft, 0, screenW - bubbleWidth);
-  newTop = clamp(newTop, 0, screenH - bubbleHeight);
-
+  if(!dragging) return;
+  let newLeft = e.clientX - offsetX, newTop = e.clientY - offsetY;
+  newLeft = clamp(newLeft, 0, window.innerWidth - bubble.offsetWidth);
+  newTop = clamp(newTop, 0, window.innerHeight - bubble.offsetHeight);
   bubble.style.left = newLeft + "px";
   bubble.style.top = newTop + "px";
-
-  // Si está abierto el widget, actualiza la posición al lado
-  if (widget.style.display === "flex") positionWidget();
 }
+function stopBubble() { dragging = false; bubble.style.cursor = "grab"; document.removeEventListener("mousemove", moveBubble); document.removeEventListener("mouseup", stopBubble); }
 
-function stopBubble() {
-  dragging = false;
-  bubble.style.cursor = "grab";
-  document.removeEventListener("mousemove", moveBubble);
-  document.removeEventListener("mouseup", stopBubble);
-}
-
-/* ==================== ABRIR / CERRAR WIDGET ==================== */
+/* ABRIR / CERRAR */
 bubble.addEventListener("click", () => {
-  if (dragging) return;
-  if (widget.style.display === "flex") {
-    widget.style.transform = "scale(0)";
-    setTimeout(() => widget.style.display = "none", 300);
-  } else {
+  if(dragging) return;
+  if(!chatOpen){
     widget.style.display = "flex";
-    positionWidget();
-    setTimeout(() => widget.style.transform = "scale(1)", 10);
+    setTimeout(()=>{widget.style.transform="translate(-50%,-50%) scale(1)";}, 10);
+    chatOpen = true;
+    if(firstOpen){
+      addMessage("Louie","¡Hola! Soy Louie, tu asistente de bienes raíces 😄. Puedo mostrarte propiedades y responder tus preguntas.");
+      firstOpen = false;
+    }
+  } else {
+    widget.style.transform = "translate(-50%,-50%) scale(0)";
+    setTimeout(()=>{widget.style.display="none";}, 300);
+    chatOpen = false;
   }
 });
 
-function positionWidget() {
-  const bubbleRect = bubble.getBoundingClientRect();
-  const widgetWidth = widget.offsetWidth;
-  const widgetHeight = widget.offsetHeight;
-  const screenW = window.innerWidth;
-  const screenH = window.innerHeight;
-
-  let top = bubbleRect.top;
-  let left = bubbleRect.right + 10; // por defecto al lado derecho
-
-  // Si se sale por la derecha, poner a la izquierda
-  if (left + widgetWidth > screenW) left = bubbleRect.left - widgetWidth - 10;
-  // Si se sale por arriba/abajo, ajustar
-  if (top + widgetHeight > screenH) top = screenH - widgetHeight - 10;
-  if (top < 10) top = 10;
-
-  widget.style.top = top + "px";
-  widget.style.left = left + "px";
-}
-
-/* ==================== MENSAJES ==================== */
+/* MENSAJES */
 function addMessage(role, text, typing = false) {
   const el = document.createElement("div");
   el.classList.add("message", role === "Tú" ? "user" : "louie");
-
-  if (typing) {
+  if(typing){
     el.textContent = "Louie está escribiendo";
     const dots = document.createElement("span");
     dots.classList.add("typing-dots");
     dots.textContent = "...";
     el.appendChild(dots);
   } else {
-    if (Array.isArray(text)) {
-      // Si es array de propiedades
-      text.forEach(p => {
+    if(Array.isArray(text)){
+      text.forEach(p=>{
+        if(p.title.toLowerCase().includes(chatInput.value.toLowerCase())) p.highlight = true;
         const card = document.createElement("div");
         card.classList.add("property-card");
-        card.innerHTML = `
-          <strong>${p.title}</strong><br>
-          ${p.price} - ${p.location || ""}<br>
-          ${p.imgURL ? `<img src="${p.imgURL}">` : ""}
-        `;
+        if(p.highlight) card.classList.add("highlight");
+        card.innerHTML = `<strong>${p.title}</strong><br>${p.price} - ${p.location||""}<br>${p.imgURL?`<img src="${p.imgURL}">`:""}`;
         el.appendChild(card);
       });
-    } else {
-      el.textContent = text;
-    }
+    } else el.textContent = text;
   }
-
   chatBody.appendChild(el);
   chatBody.scrollTop = chatBody.scrollHeight;
   return el;
 }
 
-async function typeMessage(text) {
-  const el = document.createElement("div");
-  el.classList.add("message", "louie");
-  chatBody.appendChild(el);
-  for (let i = 0; i < text.length; i++) {
-    el.textContent += text[i];
-    chatBody.scrollTop = chatBody.scrollHeight;
-    await new Promise(r => setTimeout(r, 20));
-  }
-}
-
-/* ==================== ENVIAR MENSAJE ==================== */
+/* ENVIAR MENSAJE */
 async function sendMessage() {
   const msg = chatInput.value.trim();
-  if (!msg) return;
+  if(!msg) return;
   addMessage("Tú", msg);
   chatInput.value = "";
-
   const typingEl = addMessage("Louie", "", true);
 
   try {
+    // AQUÍ MANTENEMOS TU LINK ORIGINAL
     const res = await fetch("https://louie-web-qa.onrender.com/message", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ message: msg }),
     });
     const data = await res.json();
     typingEl.remove();
 
-    if (Array.isArray(data.reply)) {
+    if(Array.isArray(data.reply)){
+      data.reply.forEach(p => { if(p.title.toLowerCase().includes(msg.toLowerCase())) p.highlight = true; });
       addMessage("Louie", data.reply);
-    } else {
-      await typeMessage(data.reply);
-    }
-  } catch (err) {
+    } else addMessage("Louie", data.reply);
+
+  } catch(err) {
     typingEl.remove();
-    addMessage("Louie", "Error 😅, no pude procesar tu mensaje.");
+    addMessage("Louie","Error 😅, no pude procesar tu mensaje.");
   }
 }
 
 chatSend.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
+chatInput.addEventListener("keypress", (e)=>{ if(e.key==="Enter") sendMessage(); });
 </script>
 </body>
 </html>
