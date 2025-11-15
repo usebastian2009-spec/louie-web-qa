@@ -1,6 +1,4 @@
 
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,6 +9,8 @@
   /* ==================== BURBUJA ==================== */
   #chat-bubble {
     position: fixed;
+    bottom: 20px;
+    right: 20px;
     width: 60px;
     height: 60px;
     background: #007bff;
@@ -23,16 +23,15 @@
     cursor: grab;
     z-index: 99999;
     user-select: none;
-    touch-action: none;
   }
 
   /* ==================== WIDGET ==================== */
   #chat-widget {
     position: fixed;
     width: 450px;
-    max-width: 90vw;
     height: 550px;
-    max-height: 80vh;
+    max-width: 95vw;
+    max-height: 90vh;
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 4px 25px rgba(0,0,0,0.25);
@@ -87,6 +86,7 @@
     font-weight: bold;
   }
 
+  /* Mensajes */
   .message {
     margin: 5px 0;
     padding: 10px 14px;
@@ -108,6 +108,7 @@
     align-self: flex-start;
   }
 
+  /* Animación de los puntitos de escritura */
   @keyframes blink {
     0% { opacity: 0; }
     50% { opacity: 1; }
@@ -123,8 +124,10 @@
 </head>
 <body>
 
+<!-- BURBUJA -->
 <div id="chat-bubble">💬</div>
 
+<!-- WIDGET -->
 <div id="chat-widget">
   <div id="chat-header">Louie AI</div>
   <div id="chat-body"></div>
@@ -142,47 +145,29 @@ const chatInput = document.getElementById("chat-input");
 const chatSend = document.getElementById("chat-send");
 
 let dragging = false;
-let offsetX = 0, offsetY = 0;
+let offsetX, offsetY;
 
-// Posición inicial para que funcione en todos los dispositivos
-function setInitialPosition() {
-  const bw = bubble.offsetWidth;
-  const bh = bubble.offsetHeight;
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  bubble.style.left = (w - bw - 20) + "px";
-  bubble.style.top = (h - bh - 20) + "px";
-}
-setInitialPosition();
-window.addEventListener("resize", setInitialPosition);
-
-// Clamp helper
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
-/* ==================== DRAG ==================== */
+/* ==================== DRAG (Desktop + Mobile) ==================== */
 function startDrag(e) {
-  e.preventDefault();
+  e.preventDefault(); // Evitar scroll en móviles
   dragging = true;
   bubble.style.cursor = "grabbing";
-
   const rect = bubble.getBoundingClientRect();
-  const clientX = e.type.startsWith("touch") ? e.touches[0].clientX : e.clientX;
-  const clientY = e.type.startsWith("touch") ? e.touches[0].clientY : e.clientY;
-  offsetX = clientX - rect.left;
-  offsetY = clientY - rect.top;
+  offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
 
-  document.addEventListener("mousemove", moveDrag);
-  document.addEventListener("mouseup", endDrag);
-  document.addEventListener("touchmove", moveDrag, {passive:false});
-  document.addEventListener("touchend", endDrag);
+  document.addEventListener(e.touches ? "touchmove" : "mousemove", moveBubble, {passive:false});
+  document.addEventListener(e.touches ? "touchend" : "mouseup", stopBubble);
 }
 
-function moveDrag(e) {
+function moveBubble(e) {
   if (!dragging) return;
-  const clientX = e.type.startsWith("touch") ? e.touches[0].clientX : e.clientX;
-  const clientY = e.type.startsWith("touch") ? e.touches[0].clientY : e.clientY;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
   let newLeft = clientX - offsetX;
   let newTop = clientY - offsetY;
@@ -192,45 +177,41 @@ function moveDrag(e) {
 
   bubble.style.left = newLeft + "px";
   bubble.style.top = newTop + "px";
-
-  e.preventDefault();
 }
 
-function endDrag() {
+function stopBubble() {
   dragging = false;
   bubble.style.cursor = "grab";
-  document.removeEventListener("mousemove", moveDrag);
-  document.removeEventListener("mouseup", endDrag);
-  document.removeEventListener("touchmove", moveDrag);
-  document.removeEventListener("touchend", endDrag);
+  document.removeEventListener("mousemove", moveBubble);
+  document.removeEventListener("mouseup", stopBubble);
+  document.removeEventListener("touchmove", moveBubble);
+  document.removeEventListener("touchend", stopBubble);
 }
 
 bubble.addEventListener("mousedown", startDrag);
-bubble.addEventListener("touchstart", startDrag, {passive:false});
+bubble.addEventListener("touchstart", startDrag);
 
 /* ==================== ABRIR / CERRAR WIDGET ==================== */
-function openWidget() {
+function toggleWidget(e) {
   if (dragging) return;
 
+  const widgetHeight = Math.min(550, window.innerHeight - 20); 
+  const widgetWidth = Math.min(450, window.innerWidth - 20); 
   const bubbleRect = bubble.getBoundingClientRect();
-  const widgetHeight = widget.offsetHeight;
-  const widgetWidth = widget.offsetWidth;
-  const screenW = window.innerWidth;
-  const screenH = window.innerHeight;
 
   let top, left;
 
-  if(bubbleRect.bottom + widgetHeight + 10 <= screenH){
+  // Vertical
+  if (bubbleRect.bottom + widgetHeight + 10 <= window.innerHeight) {
     top = bubbleRect.bottom + 10;
-  } else if(bubbleRect.top - widgetHeight - 10 >= 0){
+  } else if (bubbleRect.top - widgetHeight - 10 >= 0) {
     top = bubbleRect.top - widgetHeight - 10;
   } else {
-    top = clamp(bubbleRect.top, 10, screenH - widgetHeight - 10);
+    top = Math.min(Math.max(bubbleRect.bottom + 10, 10), window.innerHeight - widgetHeight - 10);
   }
 
-  left = bubbleRect.left;
-  if(left + widgetWidth > screenW) left = screenW - widgetWidth - 10;
-  if(left < 0) left = 10;
+  // Horizontal
+  left = Math.min(Math.max(bubbleRect.left, 10), window.innerWidth - widgetWidth - 10);
 
   widget.style.top = top + "px";
   widget.style.left = left + "px";
@@ -238,21 +219,22 @@ function openWidget() {
   widget.style.transform = widget.style.transform === "scale(1)" ? "scale(0)" : "scale(1)";
 }
 
-bubble.addEventListener("click", openWidget);
+bubble.addEventListener("click", toggleWidget);
+bubble.addEventListener("touchend", toggleWidget);
 
 /* ==================== MENSAJES ==================== */
-function addMessage(role, text, typing = false, lang="es") {
+function addMessage(role, text, typing = false, lang = "es") {
   const el = document.createElement("div");
   el.classList.add("message", role === "Tú" ? "user" : "louie");
-
-  if(typing){
-    el.textContent = lang==="es"?"Louie está escribiendo":"Typing";
+  
+  if (typing) {
+    el.textContent = lang === "es" ? "Louie está escribiendo" : "Typing";
     const dots = document.createElement("span");
     dots.classList.add("typing-dots");
     dots.textContent = "...";
     el.appendChild(dots);
   } else {
-    el.textContent = text;
+    el.textContent = `${text}`;
   }
 
   chatBody.appendChild(el);
@@ -260,46 +242,51 @@ function addMessage(role, text, typing = false, lang="es") {
   return el;
 }
 
-async function typeMessage(text){
+/* ==================== ESCRITURA TIPO CHATGPT ==================== */
+async function typeMessage(text) {
   const el = document.createElement("div");
   el.classList.add("message", "louie");
   chatBody.appendChild(el);
 
-  for(let i=0;i<text.length;i++){
+  for (let i = 0; i < text.length; i++) {
     el.textContent += text[i];
     chatBody.scrollTop = chatBody.scrollHeight;
-    await new Promise(r=>setTimeout(r,20));
+    await new Promise(r => setTimeout(r, 20));
   }
 }
 
-async function sendMessage(){
+async function sendMessage() {
   const msg = chatInput.value.trim();
-  if(!msg) return;
+  if (!msg) return;
 
   addMessage("Tú", msg);
   chatInput.value = "";
 
-  const lang = /[a-zA-Z]/.test(msg)?"en":"es";
-  const typingEl = addMessage("Louie","",true,lang);
+  const lang = /[a-zA-Z]/.test(msg) ? "en" : "es";
 
-  try{
-    const res = await fetch("https://louie-web-qa.onrender.com/message",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({message:msg})
+  const typingEl = addMessage("Louie", "", true, lang);
+
+  try {
+    const res = await fetch("https://louie-web-qa.onrender.com/message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg }),
     });
+
     const data = await res.json();
     typingEl.remove();
     await typeMessage(data.reply);
-  } catch(e){
+
+  } catch (error) {
     typingEl.remove();
-    addMessage("Louie","Error 😅, no pude procesar tu mensaje.");
+    addMessage("Louie", "Error 😅, no pude procesar tu mensaje.");
   }
 }
 
 chatSend.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress",(e)=>{if(e.key==="Enter") sendMessage();});
-
+chatInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
 </script>
 </body>
 </html>
